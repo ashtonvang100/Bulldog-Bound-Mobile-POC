@@ -36,11 +36,7 @@ export default function Dashboard() {
             </View>
           </View>
           <View style={styles.content}>
-            <MediaPlaceholder
-              onPress={() =>
-                setPreview({ title: "Overview Video", kind: "video" })
-              }
-            />
+            <MediaPlaceholder />
             <View style={styles.actions}>
               <ActionRow
                 title="Registration Form"

@@ -12,12 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  navigationItems,
-  userItems,
-  type Preview,
-} from "@/data/dashboard";
-import { MediaPlaceholder } from "./MediaPlaceholder";
+import { navigationItems, userItems, type Preview } from "@/data/dashboard";
 type Props = {
   preview: Preview | null;
   menu: "navigation" | "user" | null;
@@ -123,12 +118,9 @@ export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
                   resizeMode="contain"
                 />
               )}
-              {preview?.kind === "video" && <MediaPlaceholder />}
               <Text style={styles.badge}>LOCAL PROTOTYPE PREVIEW</Text>
               <Text style={styles.description}>
-                {preview?.kind === "video"
-                  ? "This is the original overview video thumbnail. Video playback is a placeholder; this prototype does not stream YouTube content."
-                  : preview?.description}
+                {preview?.description}
               </Text>
               <Pressable
                 accessibilityRole="button"

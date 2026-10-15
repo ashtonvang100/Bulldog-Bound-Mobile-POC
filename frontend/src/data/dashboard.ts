@@ -4,7 +4,6 @@ export const introduction =
 export type Preview = {
   title: string;
   description?: string;
-  kind?: "video";
   image?: ImageSourcePropType;
 };
 export const grades = [
