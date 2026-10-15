@@ -1,0 +1,56 @@
+import { StyleSheet } from "react-native";
+import { colors } from "@/constants/colors";
+
+export const previewModalStyles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: "white" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  heading: { flex: 1, color: colors.navy, fontSize: 22 },
+  close: { padding: 14, minWidth: 48, minHeight: 48 },
+  content: { padding: 20, width: "100%", maxWidth: 640, alignSelf: "center" },
+  search: {
+    borderWidth: 1,
+    borderColor: "#aaa",
+    borderRadius: 6,
+    padding: 14,
+    fontSize: 16,
+    color: "#111",
+    marginBottom: 16,
+  },
+  menuHeading: { fontSize: 20, color: colors.navy, marginVertical: 12 },
+  item: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    gap: 12,
+  },
+  itemText: { flex: 1, fontSize: 16, color: colors.navy },
+  grade: { width: 140, height: 140, alignSelf: "center" },
+  badge: {
+    marginTop: 24,
+    marginBottom: 12,
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.link,
+    letterSpacing: 1,
+  },
+  description: { color: "#333", fontSize: 17, lineHeight: 26 },
+  return: {
+    marginTop: 24,
+    padding: 16,
+    borderRadius: 6,
+    backgroundColor: colors.link,
+    alignItems: "center",
+  },
+  returnText: { fontSize: 16, color: "white" },
+  itemPressed: { backgroundColor: "#f1f1f1" },
+  returnPressed: { opacity: 0.7 },
+});

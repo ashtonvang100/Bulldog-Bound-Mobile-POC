@@ -1,24 +1,44 @@
-# Frontend
+# Bulldog Bound dashboard prototype
 
-Minimal Expo Router starter with automatic light and dark themes.
+An Expo SDK 57 / React Native / TypeScript recreation of the Fresno State ModoLabs guest dashboard, using native components and local media. No backend, authentication, production requests, or WebView.
 
-## Get started
+Reference: https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/_/bb_guest_dash
 
-1. Install dependencies:
+## Run on a physical device
 
-   ```bash
-   npm install
-   ```
+From this directory:
 
-2. Start Expo:
+```bash
+npm ci
+npx expo start --go
+```
 
-   ```bash
-   npx expo start
-   ```
+Install/open Expo Go compatible with SDK 57. Connect the phone and computer to the same Wi-Fi. On iPhone, scan the terminal QR code with Camera and open in Expo Go. On Android, scan it from Expo Go. Metro serves the application to your device.
 
-Start building the UI in `src/app/index.tsx`. Keep route files in `src/app/` and shared code elsewhere in `src/`.
+If LAN connectivity is blocked, use `npx expo start --go --tunnel` (Expo may prompt to install its tunnel helper).
 
-## Learn more
+## Organization
 
-- [Expo documentation](https://docs.expo.dev/)
-- [Expo Router](https://docs.expo.dev/router/introduction/)
+- `src/app/index.tsx`: dashboard composition and local interaction state.
+- `src/app/_layout.tsx`: Expo Router stack, safe-area provider, and status bar.
+- `src/components/dashboard/`: Header, ActionRow, ProgramGrid, MediaPlaceholder, and PreviewModal.
+- `src/data/dashboard.ts`: original introduction, menu labels, grade tiles, shared colors, and preview types.
+- `assets/dashboard/`: downloaded original media; `sources.json` records each public source URL.
+
+The reference HTML and stylesheet supplied the section order, text, navy panel (`#13284c`), navigation red (`#c41230`), action red (`#b42b36`), 220-point video frame, and 84-point grade badge sizing. The original photo, header logo and icons, four grade badges, and YouTube thumbnail are bundled locally. There are no fabricated university logos.
+
+## Interactions and remaining differences
+
+User and navigation menus open and close. Menu search filters local destinations. Registration, website, grade tiles, QR test, and video open labeled local previews. Header home buttons scroll to the top. Android back dismisses an open modal. All destinations are local; no sign-in, registration submission, camera scanning, or video streaming occurs.
+
+Video playback and destination content remain placeholders by design. Menus use full-screen native modals rather than web dropdowns. System fonts are used (Roboto on Android, platform font on iOS). Layout follows the retrieved mobile stylesheet, with bounded widths for larger displays. Browser automation could not provide a reliable rendered comparison; pixel fidelity, physical-device rendering, and tap behavior still need an Expo Go review.
+
+## Validate
+
+```bash
+npx expo lint
+npx tsc --noEmit
+npx expo export --platform all --output-dir /tmp/bulldog-bound-export
+```
+
+Device review: scroll through all sections, tap each grade and action, dismiss previews, open both menus, search for Campus Map, try an unmatched search, and tap the home logo after scrolling. Check a narrow screen and enlarged text for clipping.

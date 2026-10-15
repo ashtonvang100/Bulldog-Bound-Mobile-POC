@@ -1,15 +1,104 @@
-import { useTheme } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native';
-
-export default function Index() {
-  const { colors } = useTheme();
-//<View style={[styles.container, { backgroundColor: colors.background }]} /
-  return <Text>Hello</Text>;
+import { dashboardStyles as styles } from "@/constants/dashboard/dashboard";
+import { useRef, useState } from "react";
+import { Image, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Header } from "@/components/dashboard/Header";
+import { ActionRow } from "@/components/dashboard/ActionRow";
+import { MediaPlaceholder } from "@/components/dashboard/MediaPlaceholder";
+import { ProgramGrid } from "@/components/dashboard/ProgramGrid";
+import { PreviewModal } from "@/components/dashboard/PreviewModal";
+import { introduction, type Preview } from "@/data/dashboard";
+export default function Dashboard() {
+  const scroll = useRef<ScrollView>(null);
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [menu, setMenu] = useState<"navigation" | "user" | null>(null);
+  return (
+    <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
+      <Header
+        onHome={() => scroll.current?.scrollTo({ y: 0, animated: true })}
+        onUser={() => setMenu("user")}
+        onMenu={() => setMenu("navigation")}
+      />
+      <SafeAreaView style={styles.body} edges={["bottom"]}>
+        <ScrollView ref={scroll} contentContainerStyle={styles.scroll}>
+          <Image
+            source={require("../../assets/dashboard/hero.jpg")}
+            accessibilityLabel="President Sandoval speaking to students at Fresno State"
+            style={styles.hero}
+            resizeMode="contain"
+          />
+          <View style={styles.introduction}>
+            <View style={styles.introContent}>
+              <Text accessibilityRole="header" style={styles.title}>
+                Bulldog Bound
+              </Text>
+              <Text style={styles.description}>{introduction}</Text>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <MediaPlaceholder
+              onPress={() =>
+                setPreview({ title: "Overview Video", kind: "video" })
+              }
+            />
+            <View style={styles.actions}>
+              <ActionRow
+                title="Registration Form"
+                onPress={() =>
+                  setPreview({
+                    title: "Registration Form",
+                    description:
+                      "The original dashboard links to a Bulldog Bound registration form. This local prototype does not submit registrations or collect personal information.",
+                  })
+                }
+              />
+              <ActionRow
+                title="Visit Bulldog Bound Website"
+                onPress={() =>
+                  setPreview({
+                    title: "Visit Bulldog Bound Website",
+                    description: introduction,
+                  })
+                }
+              />
+            </View>
+            <View style={styles.section}>
+              <Text accessibilityRole="header" style={styles.sectionTitle}>
+                Program Information
+              </Text>
+              <Text style={styles.sectionDescription}>
+                Read more about specific grade level milestones for 9th-12th
+                graders part of Bulldog Bound.
+              </Text>
+            </View>
+            <ProgramGrid onSelect={setPreview} />
+            <ActionRow
+              title="QR TEST"
+              secondary
+              onPress={() =>
+                setPreview({
+                  title: "QR TEST",
+                  description:
+                    "The original link opens check-in. QR scanning and event check-in are unavailable in this frontend prototype.",
+                })
+              }
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+      <PreviewModal
+        key={menu ?? "preview"}
+        preview={preview}
+        menu={menu}
+        onClose={() => {
+          setPreview(null);
+          setMenu(null);
+        }}
+        onSelect={(item) => {
+          setMenu(null);
+          setPreview(item);
+        }}
+      />
+    </SafeAreaView>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

@@ -1,0 +1,40 @@
+import type { ImageSourcePropType } from "react-native";
+export const introduction =
+  "Bulldog Bound is Fresno State’s guaranteed admissions program. It means that high school students from partnering school districts who meet the minimum California State University requirements are guaranteed a spot at Fresno State after they graduate.";
+export type Preview = {
+  title: string;
+  description?: string;
+  kind?: "video";
+  image?: ImageSourcePropType;
+};
+export const grades = [
+  { title: "9th", image: require("../../assets/dashboard/grade9.png") },
+  { title: "10th", image: require("../../assets/dashboard/grade10.png") },
+  { title: "11th", image: require("../../assets/dashboard/grade11.png") },
+  { title: "12th", image: require("../../assets/dashboard/grade12.png") },
+] as const;
+export const navigationItems = [
+  "News",
+  "Student",
+  "Course Catalog",
+  "Student Cupboard",
+  "Campus Map",
+  "Athletics",
+  "Events",
+  "Directory",
+  "Emergency",
+  "Library",
+  "Links",
+  "Social",
+  "Campus Dining Hours",
+  "Graduate Net",
+  "Hire Fresno State",
+  "BullDog Genie",
+  "Bulldog Bound",
+];
+export const userItems = [
+  "My favorites",
+  "Sign in",
+  "Messages",
+  "Location and Persona",
+];
