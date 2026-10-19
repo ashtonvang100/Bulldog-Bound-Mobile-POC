@@ -22,8 +22,7 @@ type Props = {
 };
 export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
   const [query, setQuery] = useState("");
-  const items: { title: string; url?: string }[] =
-    menu === "user" ? userItems.map((title) => ({ title })) : navigationItems;
+  const items = menu === "user" ? userItems : navigationItems;
   const matches = items.filter((item) =>
     item.title.toLowerCase().includes(query.toLowerCase()),
   );
@@ -98,17 +97,10 @@ export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
                       pressed && styles.itemPressed,
                     ]}
                     onPress={() => {
-                      if (menu === "navigation") {
-                        onClose();
-                        router.push({
-                          pathname: "/web",
-                          params: { title: item.title, url: item.url ?? "" },
-                        });
-                        return;
-                      }
-                      onSelect({
-                        title: item.title,
-                        description: `${item.title} is a preview destination. No university services or accounts are connected to this frontend prototype.`,
+                      onClose();
+                      router.push({
+                        pathname: "/web",
+                        params: { title: item.title, url: item.url },
                       });
                     }}
                   >

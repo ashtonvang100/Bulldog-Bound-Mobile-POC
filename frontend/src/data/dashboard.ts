@@ -84,8 +84,20 @@ export const navigationItems = [
   },
 ];
 export const userItems = [
-  "My favorites",
-  "Sign in",
-  "Messages",
-  "Location and Persona",
+  {
+    title: "My favorites",
+    url: "https://fresnosandbox-prod.modolabs.net/default/kurogo_bookmarks/index",
+  },
+  {
+    title: "Sign in",
+    url: "https://fresnosandbox-prod.modolabs.net/default/kurogo_login/index",
+  },
+  {
+    title: "Messages",
+    url: "https://fresnosandbox-prod.modolabs.net/default/kurogo_message_center/index",
+  },
+  {
+    title: "Location and Persona",
+    url: "https://fresnosandbox-prod.modolabs.net/default/kurogo_sitegroup_selector/index",
+  },
 ];
