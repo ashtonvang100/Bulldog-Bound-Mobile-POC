@@ -17,5 +17,4 @@ export const programGridStyles = StyleSheet.create({
   },
   image: { width: "100%", maxWidth: 84, aspectRatio: 1 },
   label: { fontSize: 16, fontWeight: "700", color: colors.navy, marginTop: 4 },
-  pressed: { backgroundColor: "#f1f1f1", borderRadius: 8 },
 });

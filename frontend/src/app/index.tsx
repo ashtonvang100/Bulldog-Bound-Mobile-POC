@@ -8,6 +8,8 @@ import { MediaPlaceholder } from "@/components/dashboard/MediaPlaceholder";
 import { ProgramGrid } from "@/components/dashboard/ProgramGrid";
 import { PreviewModal } from "@/components/dashboard/PreviewModal";
 import { introduction, type Preview } from "@/data/dashboard";
+import { router } from "expo-router";
+
 export default function Dashboard() {
   const scroll = useRef<ScrollView>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -41,19 +43,24 @@ export default function Dashboard() {
               <ActionRow
                 title="Registration Form"
                 onPress={() =>
-                  setPreview({
-                    title: "Registration Form",
-                    description:
-                      "The original dashboard links to a Bulldog Bound registration form. This local prototype does not submit registrations or collect personal information.",
+                  router.push({
+                    pathname: "/web",
+                    params: {
+                      title: "Registration Form",
+                      url: "https://fresnostate.kualibuild.com/app/647e017bb9012f0208e789e0/start",
+                    },
                   })
                 }
               />
               <ActionRow
                 title="Visit Bulldog Bound Website"
                 onPress={() =>
-                  setPreview({
-                    title: "Visit Bulldog Bound Website",
-                    description: introduction,
+                  router.push({
+                    pathname: "/web",
+                    params: {
+                      title: "Visit Bulldog Bound Website",
+                      url: "https://studentaffairs.fresnostate.edu/are/bound/index.html",
+                    },
                   })
                 }
               />

@@ -7,10 +7,26 @@ export type Preview = {
   image?: ImageSourcePropType;
 };
 export const grades = [
-  { title: "9th", image: require("../../assets/dashboard/grade9.png") },
-  { title: "10th", image: require("../../assets/dashboard/grade10.png") },
-  { title: "11th", image: require("../../assets/dashboard/grade11.png") },
-  { title: "12th", image: require("../../assets/dashboard/grade12.png") },
+  {
+    title: "9th",
+    image: require("../../assets/dashboard/grade9.png"),
+    url: "https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/_/bb_program_info9",
+  },
+  {
+    title: "10th",
+    image: require("../../assets/dashboard/grade10.png"),
+    url: "https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/_/bb_program_info10",
+  },
+  {
+    title: "11th",
+    image: require("../../assets/dashboard/grade11.png"),
+    url: "https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/_/bb_program_info11",
+  },
+  {
+    title: "12th",
+    image: require("../../assets/dashboard/grade12.png"),
+    url: "https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/_/bb_program_info12",
+  },
 ] as const;
 export const navigationItems = [
   "News",

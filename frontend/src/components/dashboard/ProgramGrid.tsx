@@ -1,6 +1,8 @@
 import { programGridStyles as styles } from "@/constants/dashboard/ProgramGrid";
 import { Image, Pressable, Text, View } from "react-native";
 import { grades, type Preview } from "@/data/dashboard";
+import { router } from "expo-router";
+
 export function ProgramGrid({
   onSelect,
 }: {
@@ -14,13 +16,15 @@ export function ProgramGrid({
           accessibilityRole="button"
           accessibilityLabel={`${grade.title} grade program information`}
           onPress={() =>
-            onSelect({
-              ...grade,
-              title: `${grade.title} Grade`,
-              description: `This tile opens the ${grade.title} grade milestones on the original dashboard. Grade-specific content is a placeholder in this local prototype.`,
+            router.push({
+              pathname: "/web",
+              params: {
+                title: `${grade.title} Grade Overview`,
+                url: grade.url,
+              },
             })
           }
-          style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
+          style={styles.tile}
         >
           <Image
             source={grade.image}
