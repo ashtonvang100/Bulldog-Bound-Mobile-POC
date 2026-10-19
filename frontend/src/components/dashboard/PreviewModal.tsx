@@ -2,6 +2,7 @@ import { previewModalStyles as styles } from "@/constants/dashboard/PreviewModal
 import { colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
+import { router } from "expo-router";
 import {
   Image,
   Modal,
@@ -21,9 +22,10 @@ type Props = {
 };
 export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
   const [query, setQuery] = useState("");
-  const items = menu === "user" ? userItems : navigationItems;
+  const items: { title: string; url?: string }[] =
+    menu === "user" ? userItems.map((title) => ({ title })) : navigationItems;
   const matches = items.filter((item) =>
-    item.toLowerCase().includes(query.toLowerCase()),
+    item.title.toLowerCase().includes(query.toLowerCase()),
   );
   return (
     <Modal
@@ -35,7 +37,11 @@ export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
         <SafeAreaView style={styles.safe}>
           <View style={styles.header}>
             <Text accessibilityRole="header" style={styles.heading}>
-              {menu ? (menu === "user" ? "User" : "Navigation") : preview?.title}
+              {menu
+                ? menu === "user"
+                  ? "User"
+                  : "Navigation"
+                : preview?.title}
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -86,19 +92,27 @@ export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
                 {matches.map((item) => (
                   <Pressable
                     accessibilityRole="button"
-                    key={item}
+                    key={item.title}
                     style={({ pressed }) => [
                       styles.item,
                       pressed && styles.itemPressed,
                     ]}
-                    onPress={() =>
+                    onPress={() => {
+                      if (menu === "navigation") {
+                        onClose();
+                        router.push({
+                          pathname: "/web",
+                          params: { title: item.title, url: item.url ?? "" },
+                        });
+                        return;
+                      }
                       onSelect({
-                        title: item,
-                        description: `${item} is a preview destination. No university services or accounts are connected to this frontend prototype.`,
-                      })
-                    }
+                        title: item.title,
+                        description: `${item.title} is a preview destination. No university services or accounts are connected to this frontend prototype.`,
+                      });
+                    }}
                   >
-                    <Text style={styles.itemText}>{item}</Text>
+                    <Text style={styles.itemText}>{item.title}</Text>
                     <Ionicons
                       name="chevron-forward"
                       size={20}
@@ -107,7 +121,9 @@ export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
                   </Pressable>
                 ))}
                 {!matches.length && (
-                  <Text style={styles.description}>No matching menu items.</Text>
+                  <Text style={styles.description}>
+                    No matching menu items.
+                  </Text>
                 )}
               </>
             ) : (
@@ -120,9 +136,7 @@ export function PreviewModal({ preview, menu, onClose, onSelect }: Props) {
                   />
                 )}
                 <Text style={styles.badge}>LOCAL PROTOTYPE PREVIEW</Text>
-                <Text style={styles.description}>
-                  {preview?.description}
-                </Text>
+                <Text style={styles.description}>{preview?.description}</Text>
                 <Pressable
                   accessibilityRole="button"
                   onPress={onClose}
