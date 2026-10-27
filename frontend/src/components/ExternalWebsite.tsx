@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import { WebView, type WebViewProps } from "react-native-webview";
 
 function isHttpsUrl(url: string | undefined): url is `https://${string}` {
   try {
@@ -31,7 +31,8 @@ export function ExternalWebsite({
   url?: string;
   title: string;
 }) {
-  const webView = useRef<WebView>(null);
+  // WebView 14's default generic is undefined, which narrows its props to never.
+  const webView = useRef<WebView<WebViewProps>>(null);
   const [canGoBack, setCanGoBack] = useState(false);
 
   const returnToMoc = useCallback(() => {
@@ -117,7 +118,7 @@ export function ExternalWebsite({
             </Link>
           </View>
         ) : (
-          <WebView
+          <WebView<WebViewProps>
             ref={webView}
             style={styles.content}
             source={{ uri: url }}

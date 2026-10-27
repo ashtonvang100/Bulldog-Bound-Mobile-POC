@@ -1,6 +1,6 @@
 import { dashboardStyles as styles } from "@/constants/dashboard/dashboard";
 import { useRef, useState } from "react";
-import { Image, ScrollView, Text, View } from "react-native";
+import { Image, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/dashboard/Header";
 import { ActionRow } from "@/components/dashboard/ActionRow";
@@ -11,7 +11,7 @@ import { introduction, type Preview } from "@/data/dashboard";
 import { router } from "expo-router";
 
 export default function Dashboard() {
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [menu, setMenu] = useState<"navigation" | "user" | null>(null);
   return (
