@@ -1,4 +1,5 @@
 import { headerStyles as styles } from "@/constants/dashboard/Header";
+import { router } from "expo-router";
 import { Image, Pressable, Text, View } from "react-native";
 type Props = { onHome: () => void; onMenu: () => void; onUser: () => void };
 export function Header({ onHome, onMenu, onUser }: Props) {
@@ -19,7 +20,15 @@ export function Header({ onHome, onMenu, onUser }: Props) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Bulldog Bound home"
-        onPress={onHome}
+        onPress={() =>
+          router.push({
+            pathname: "/web",
+            params: {
+              title: "Bulldog Bound home",
+              url: "https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/index",
+            },
+          })
+        }
         style={({ pressed }) => [styles.module, pressed && styles.pressed]}
       >
         <Image
