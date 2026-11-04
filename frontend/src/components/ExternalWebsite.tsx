@@ -27,22 +27,28 @@ function isHttpsUrl(url: string | undefined): url is `https://${string}` {
 export function ExternalWebsite({
   url,
   title,
+  embedded = false,
 }: {
   url?: string;
   title: string;
+  embedded?: boolean;
 }) {
   // WebView 14's default generic is undefined, which narrows its props to never.
   const webView = useRef<WebView<WebViewProps>>(null);
   const [canGoBack, setCanGoBack] = useState(false);
 
   const returnToMoc = useCallback(() => {
+    if (embedded) {
+      router.navigate("/");
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
       // A deep link may open this screen without an app navigation history.
       router.replace("/");
     }
-  }, []);
+  }, [embedded]);
 
   const goBack = useCallback(() => {
     if (canGoBack && webView.current) {
@@ -69,31 +75,41 @@ export function ExternalWebsite({
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-          // Let WebView swipes handle website history before app swipe-to-pop.
-          gestureEnabled: !canGoBack,
-        }}
-      />
+      {!embedded && (
+        <Stack.Screen
+          options={{
+            headerShown: false,
+            // Let WebView swipes handle website history before app swipe-to-pop.
+            gestureEnabled: !canGoBack,
+          }}
+        />
+      )}
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={canGoBack ? "Go back in website" : "Back to MOC"}
-          accessibilityHint={
-            canGoBack
-              ? "Opens the previous page in this website"
-              : "Returns to the previous MOC screen or home"
-          }
-          onPress={goBack}
-          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-        >
-          <Ionicons name="chevron-back" size={24} color="white" />
-          <Text style={styles.buttonText}>
-            {canGoBack ? "Back" : "Back to MOC"}
+        {embedded && !canGoBack ? (
+          <Text accessibilityRole="header" style={styles.title}>
+            {title}
           </Text>
-        </Pressable>
-        {canGoBack && (
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              canGoBack ? "Go back in website" : "Back to MOC"
+            }
+            accessibilityHint={
+              canGoBack
+                ? "Opens the previous page in this website"
+                : "Returns to the previous MOC screen or home"
+            }
+            onPress={goBack}
+            style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+            <Text style={styles.buttonText}>
+              {canGoBack ? "Back" : "Back to MOC"}
+            </Text>
+          </Pressable>
+        )}
+        {canGoBack && !embedded && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to MOC"
@@ -105,18 +121,36 @@ export function ExternalWebsite({
           </Pressable>
         )}
       </View>
-      <SafeAreaView style={styles.content} edges={["bottom"]}>
+      <SafeAreaView style={styles.content} edges={embedded ? [] : ["bottom"]}>
         {!isHttpsUrl(url) ? (
           <View style={styles.message}>
             <Text>This page needs a valid HTTPS link.</Text>
           </View>
         ) : Platform.OS === "web" ? (
-          <View style={styles.message}>
-            <Text>Continue to {title}:</Text>
-            <Link href={url} style={styles.link}>
-              Open {title}
-            </Link>
-          </View>
+          embedded ? (
+            <View style={styles.content}>
+              <Link
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.link}
+              >
+                Open {title} in a new tab
+              </Link>
+              <iframe
+                title={title}
+                src={url}
+                style={{ flex: 1, width: "100%", border: 0, minHeight: 0 }}
+              />
+            </View>
+          ) : (
+            <View style={styles.message}>
+              <Text>Continue to {title}:</Text>
+              <Link href={url} style={styles.link}>
+                Open {title}
+              </Link>
+            </View>
+          )
         ) : (
           <WebView<WebViewProps>
             ref={webView}
@@ -169,6 +203,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  title: { color: "white", fontSize: 18, fontWeight: "600", padding: 12 },
   pressed: { backgroundColor: "#940e24" },
   message: {
     flex: 1,

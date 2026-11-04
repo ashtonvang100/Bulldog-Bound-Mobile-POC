@@ -1,6 +1,12 @@
 import { dashboardStyles as styles } from "@/constants/dashboard/dashboard";
 import { useRef, useState } from "react";
-import { Image, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
+import {
+  Image,
+  ScrollView,
+  Text,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/dashboard/Header";
 import { ActionRow } from "@/components/dashboard/ActionRow";
@@ -21,10 +27,10 @@ export default function Dashboard() {
         onUser={() => setMenu("user")}
         onMenu={() => setMenu("navigation")}
       />
-      <SafeAreaView style={styles.body} edges={["bottom"]}>
+      <View style={styles.body}>
         <ScrollView ref={scroll} contentContainerStyle={styles.scroll}>
           <Image
-            source={require("../../assets/dashboard/hero.jpg")}
+            source={require("../../../assets/dashboard/hero.jpg")}
             accessibilityLabel="President Sandoval speaking to students at Fresno State"
             style={styles.hero}
             resizeMode="contain"
@@ -88,7 +94,7 @@ export default function Dashboard() {
             />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
       <PreviewModal
         key={menu ?? "preview"}
         preview={preview}
