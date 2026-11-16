@@ -12,8 +12,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function NotificationsScreen() {
-  const { supported, busy, permission, token, error, enable } =
-    useNotifications();
+  const {
+    supported,
+    busy,
+    permission,
+    token,
+    error,
+    enable,
+    localTestSupported,
+    localTestBusy,
+    localTestError,
+    localTestScheduled,
+    sendLocalTest,
+  } = useNotifications();
   const [settingsError, setSettingsError] = useState<string | null>(null);
   return (
     <SafeAreaView style={styles.screen} edges={["bottom", "left", "right"]}>
@@ -43,14 +54,14 @@ export default function NotificationsScreen() {
             {!token && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityState={{ disabled: busy }}
-                disabled={busy}
+                accessibilityState={{ disabled: busy || localTestBusy }}
+                disabled={busy || localTestBusy}
                 onPress={() => {
                   void enable();
                 }}
                 style={({ pressed }) => [
                   styles.button,
-                  (pressed || busy) && styles.pressed,
+                  (pressed || busy || localTestBusy) && styles.pressed,
                 ]}
               >
                 <Text style={styles.buttonText}>
@@ -68,25 +79,6 @@ export default function NotificationsScreen() {
                 accessibilityLabel="Connecting notifications"
               />
             )}
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setSettingsError(null);
-                void Linking.openSettings().catch(() =>
-                  setSettingsError(
-                    "Unable to open settings. Open your device settings to manage notifications.",
-                  ),
-                );
-              }}
-              style={styles.settings}
-            >
-              <Text style={styles.settingsText}>Open device settings</Text>
-            </Pressable>
-            {(error || settingsError) && (
-              <Text accessibilityRole="alert" style={styles.error}>
-                {settingsError ?? error}
-              </Text>
-            )}
             {__DEV__ && token && (
               <>
                 <Text style={styles.body}>Development push token</Text>
@@ -96,6 +88,62 @@ export default function NotificationsScreen() {
               </>
             )}
           </>
+        )}
+        {__DEV__ && localTestSupported && (
+          <>
+            <Text style={styles.body}>
+              Development local test: schedules an alert in about five seconds.
+              No push token or server is needed.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: localTestBusy }}
+              disabled={localTestBusy}
+              onPress={() => {
+                void sendLocalTest();
+              }}
+              style={({ pressed }) => [
+                styles.button,
+                (pressed || localTestBusy) && styles.pressed,
+              ]}
+            >
+              <Text style={styles.buttonText}>
+                {localTestBusy ? "Scheduling…" : "Send local test notification"}
+              </Text>
+            </Pressable>
+            {localTestScheduled && (
+              <Text accessibilityLiveRegion="polite" style={styles.body}>
+                Local test scheduled. Expect an alert in about five seconds;
+                tap it to open Notifications.
+              </Text>
+            )}
+            {localTestError && (
+              <Text accessibilityRole="alert" style={styles.error}>
+                {localTestError}
+              </Text>
+            )}
+          </>
+        )}
+        {(supported || localTestSupported) && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setSettingsError(null);
+              void Linking.openSettings().catch(() =>
+                setSettingsError(
+                  "Unable to open settings. Open your device settings to manage notifications.",
+                ),
+              );
+            }}
+            style={styles.settings}
+          >
+            <Text style={styles.settingsText}>Open device settings</Text>
+          </Pressable>
+        )}
+        {(error || settingsError) && (
+          <Text accessibilityRole="alert" style={styles.error}>
+            {settingsError ?? error}
+          </Text>
         )}
       </ScrollView>
     </SafeAreaView>
