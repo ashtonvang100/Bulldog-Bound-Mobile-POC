@@ -1,12 +1,12 @@
 # Notifications
 
-Audit date: November 16, 2026. This audit inspected the current source and configuration for Expo SDK **58** (`expo ~58.0.25`, `expo-notifications ~58.1.9`). It did not build/install the app, inspect hosted credentials, or send a notification. Device behavior described below is expected from the code, not confirmed delivery. Lint and TypeScript checks passed.
+Audit and local-test update: November 16, 2026. This guide covers Expo SDK **58** (`expo ~58.0.25`, `expo-notifications ~58.1.9`). A development-only local notification test has been added after the initial audit. No native build was installed, hosted credentials inspected, or notification delivered during this work. Device behavior below is expected from the code, not confirmed delivery. Lint and TypeScript checks passed.
 
 ## 1. Overview – How our notification system works
 
-The app has a **remote push notification client**. It can ask permission, register a device with Expo, and handle a notification tap in an installed native app. There is no backend sender in this repository and no built-in local test notification.
+The app has a **remote push notification client** and a **development-only local notification test**. Remote registration remains limited to installed custom native apps. The local test also works through SDK 58-compatible Expo Go, without push credentials or a backend sender.
 
-- **Local notification:** the app asks the phone to display an alert now or later. Delivery does not use a server, Expo Push Service, Apple APNs, or Android FCM. This app does not currently create or schedule these alerts.
+- **Local notification:** the app asks the phone to display an alert now or later. Delivery does not use a server, Expo Push Service, Apple APNs, or Android FCM. In development, **Send local test notification** schedules one alert about five seconds later.
 - **Remote push notification:** a server sends an alert over the internet. The current client is written for Expo Push Service, which passes messages to Apple's **APNs** (Apple Push Notification service) or Google's **FCM** (Firebase Cloud Messaging). See [Expo's notification types guide](https://docs.expo.dev/push-notifications/what-you-need-to-know/).
 - **Expo Push Token:** an address identifying an app installation for Expo's delivery service. Permission alone is not a token, and a token alone does not prove delivery.
 
@@ -22,7 +22,7 @@ Backend --> Expo Push Service --> Apple APNs  --> iOS app/device
                              \-> Android FCM --> Android app/device
 Backend <-- push tickets and receipts -- Expo Push Service
 
-Local delivery (NOT implemented):
+Local delivery (development test):
 App --> phone's notification scheduler --> alert on the same device
 ```
 
@@ -37,8 +37,8 @@ The backend/database arrows show future work. Today the registration flow ends a
 | [package.json](../package.json), `package-lock.json` | Declare/install the SDK 58 notification dependencies, including `expo-dev-client`. This is an npm project; no `bun.lock` was found. |
 | [app.json](../app.json) | Configures the notification plugin, app identifiers, scheme, owner, and EAS project ID. No separate `app.config.ts`/`.js` was found. |
 | [eas.json](../eas.json) | Defines `development` (`developmentClient: true`, `distribution: internal`) and `production` (`{}`) build profiles. No iOS simulator profile is configured. |
-| [NotificationsProvider.tsx](../src/notifications/NotificationsProvider.tsx) | Implements context, permissions, token registration, presentation policy, listeners, and navigation. |
-| [notifications.tsx](../src/app/notifications.tsx) | Notification opt-in/status/settings screen; displays the token only when `__DEV__` is true. |
+| [NotificationsProvider.tsx](../src/notifications/NotificationsProvider.tsx) | Implements context, shared permissions/channel setup, local test scheduling, remote token registration, presentation policy, listeners, and navigation. |
+| [notifications.tsx](../src/app/notifications.tsx) | Notification opt-in/status/settings screen; local test controls and token display are development-only (`__DEV__`). |
 | [_layout.tsx](../src/app/_layout.tsx) | Wraps the router in the provider and declares the Notifications screen. |
 | [Home](../src/app/(tabs)/index.tsx), [tab layout](../src/app/(tabs)/_layout.tsx), [Genie](../src/app/(tabs)/genie.tsx) | Home links to Notifications. Home and Genie are valid tap destinations; Genie embeds an external website. |
 | [README.md](../README.md), [push-notifications.md](push-notifications.md) | Existing run instructions, manual remote test, and backend integration notes. |
@@ -61,50 +61,52 @@ The repository file inventory and source searches found no notification API endp
 
 ### Permission and registration flow
 
-1. The provider marks **web and Expo Go unsupported** and skips loading native notification APIs there. This restriction applies on both iOS and Android.
-2. In an installed native app, startup and returning to the foreground check permission without prompting. Android first creates the `default` channel, named **Bulldog Bound updates**, with HIGH importance and default sound.
+1. The provider skips native APIs on **web**. **Expo Go remains excluded from remote push registration and token listeners** on both platforms, but development local tests and the shared response listener are enabled there.
+2. In a custom native app, and in development Expo Go, startup and returning to the foreground check permission without prompting. Android first creates the `default` channel, named **Bulldog Bound updates**, with HIGH importance and default sound.
 3. Home → Notifications → **Enable notifications** requests permission only if permission is not granted and the OS allows asking again. iOS provisional authorization (limited permission) is treated as granted.
 4. If permission is denied, the token is cleared from memory. The screen explains the denial and provides **Open device settings**. On return, the provider checks again.
 5. If allowed, `getExpoPushTokenAsync` uses the configured EAS project ID, with `Constants.easConfig.projectId` as a fallback. The returned `result.data` is kept in React state. It is not saved to local storage or sent to a backend.
 6. Registration errors appear on the screen. With permission granted but no token, **Retry connection** is offered. Startup/foreground checks and native push token changes also attempt registration. There is an overlapping-registration guard, but no scheduled network retry/backoff or explicit request timeout in the app.
+
+Steps 3–6 describe remote opt-in in a custom build. The local test calls the same permission/channel setup directly, then schedules without requesting or checking an Expo Push Token. Its busy, error, and scheduled status are separate from remote registration. Custom builds still perform their existing automatic remote registration after permission is granted; those independent attempts can fail without blocking the local test. Expo Go never runs that registration path.
 
 The screen's “ready to receive push notifications” text means a token was obtained. It does not confirm credentials, a sender, or delivery to the phone. OS permission and registration can have different outcomes: permission can succeed while token registration fails.
 
 ### Display, listeners, and tap navigation
 
 - The foreground handler requests a banner, notification-list entry, and sound, with no badge update. Android's channel uses the default sound. Actual presentation/sound still depends on the incoming message and device settings.
-- After the root navigator is ready, `addNotificationResponseReceivedListener` handles the normal notification tap. `getLastNotificationResponse()` also checks for a tap that launched the app.
+- After the root navigator is ready, one `addNotificationResponseReceivedListener` handles normal taps from both local and remote notifications. `getLastNotificationResponse()` also checks for a tap that launched the app. Local testing does not add a second listener.
 - `data.url === "/genie"` opens Bulldog Genie; `"/notifications"` opens Notifications. Everything else, including missing/unknown URLs, opens Home (`/`). Arbitrary external URLs are not opened by this handler.
 - The handler ignores custom action identifiers, deduplicates the last handled notification ID within the listener's lifetime, and clears the saved response after handling. Subscriptions are removed on cleanup.
 - `addPushTokenListener` re-registers using the changed native token. This currently updates memory only.
 - There is no `addNotificationReceivedListener` for app-specific receipt processing, notification inbox/history, custom action buttons, background task, or badge-count management. Foreground display uses `setNotificationHandler`; it does not require an inbox listener.
-- There is no local scheduling call (`scheduleNotificationAsync`), repeat schedule, cancel control, or **Send test notification** button.
+- The development-only local test uses `scheduleNotificationAsync` with a non-repeating five-second interval, title **Bulldog Bound local test**, a message, default sound, and `data: { url: "/notifications" }`. Android uses the existing `default` channel. There is no repeat schedule or cancel control.
 - Preferences currently mean OS permission/settings only. No topic switches, backend subscription preference, or notification sign-out cleanup exists.
 
 ## 3. What I Can Test Right Now – Features that don't require external credentials
 
 | Feature | Current credential-free testing |
 | --- | --- |
-| Home → Notifications navigation and screen layout | Preview in SDK 58-compatible Expo Go or on web. Expect the installed-app availability message. |
-| Permission request/status and opening device settings | Code exists, but only runs in an installed custom native build. No push delivery credentials are needed for the permission operation itself. Creating/installing the build has separate requirements. |
-| Denial and return-from-settings refresh | Can be exercised in that custom build. A later registration error does not mean permission failed. |
-| Local notifications and scheduling | **Not implemented.** Installing `expo-notifications` does not create a test alert. |
-| Notification banner, sound, and tap routing | Handler code exists, but there is no built-in credential-free alert trigger to exercise it end to end. |
+| Home → Notifications navigation and screen layout | Preview in SDK 58-compatible Expo Go or on web. Web has no local test control. |
+| Permission request and opening device settings | Use the local test in development Expo Go or a custom development build. No push credentials are needed. In Expo Go, OS permission/settings belong to Expo Go. |
+| Denial and return-from-settings refresh | Denial shows a local-test error with settings guidance; return and try again. In custom builds, remote registration may independently fail after permission succeeds. |
+| Local notifications and scheduling | **Send local test notification** schedules one alert about five seconds after permission/setup completes. No Expo token, Firebase, APNs, FCM, or Expo Push Service needed. |
+| Notification banner, sound, and tap routing | Local test exercises the existing presentation and response handler; tap should open `/notifications`. Sound/banner depend on OS settings. |
 | Remote push | Requires additional setup. The checked-in project ID is insufficient. |
 
-**Personal iPhone without your own Apple Developer account:** you can preview the screen using compatible Expo Go today. You cannot test this implementation's actual notifications through Expo Go, because the provider disables those APIs there. The project's EAS physical-iPhone build path requires Apple signing setup; iOS remote push requires paid Apple Developer/APNs credentials. If a team already supplies a signed build installable on your registered phone, you can use that build without owning a separate developer membership. No such build was verified. See [Expo's push setup requirements](https://docs.expo.dev/push-notifications/push-notifications-setup/).
+**Personal iPhone without your own Apple Developer account:** use compatible Expo Go to test local delivery and taps today. No Apple membership or APNs setup is needed for this local test. Remote push remains unavailable in Expo Go. The project's EAS physical-iPhone build path requires Apple signing setup; iOS remote push requires paid Apple Developer/APNs credentials. If a team supplies a signed build installable on your registered phone, you can use that build without owning a separate developer membership. No such build was verified. See [Expo's push setup requirements](https://docs.expo.dev/push-notifications/push-notifications-setup/).
 
-### Smallest proposed development-only addition — not implemented
+### Local test boundaries
 
-Add a development-only **Schedule local test** control for an installed native build. It should ask permission/create the Android channel, then schedule one alert a few seconds later with a title, body, default sound, and `data: { "url": "/notifications" }`. Keep that path independent of Expo token registration so failed remote registration does not block a local test.
+Both the button and scheduling action are guarded by development mode. Production builds expose no test control, and calling the action there does nothing. Web is excluded. Rapid overlapping presses are ignored while permission/scheduling is in progress; each later successful press schedules another one-time alert.
 
-That would exercise presentation and the existing tap handler without APNs, Firebase, an Expo Push Token, or a backend. An Android development build or iOS simulator build avoids paid Apple device-signing requirements. Local support in Expo Go would additionally require changing the provider's current Expo Go guard and listener initialization; adding a button alone would not test this app's tap handler there. None of these changes were made. The [SDK 58 API reference](https://docs.expo.dev/versions/v58.0.0/sdk/notifications/) documents local scheduling and Expo Go's library-level local support.
+Successful scheduling means the OS accepted the request, not that an alert has already appeared. Permission denial and scheduling exceptions produce an on-screen error; no alert is scheduled when permission is denied. This test validates client behavior, not remote credentials or server delivery. The [SDK 58 API reference](https://docs.expo.dev/versions/v58.0.0/sdk/notifications/) documents local scheduling and local notification support in Expo Go.
 
 ## 4. How to Test – Exact commands and steps
 
-Run commands from `frontend/`. These are instructions for the developer; the audit did not run builds or configure accounts.
+Run commands from `frontend/`. These are instructions for the developer; no builds or accounts were configured during this work.
 
-### A. Preview today with no credentials
+### A. Send a local test today with no credentials
 
 1. Install dependencies if needed, then explicitly select Expo Go (the project also includes `expo-dev-client`):
 
@@ -114,14 +116,17 @@ Run commands from `frontend/`. These are instructions for the developer; the aud
    ```
 
 2. Install/open Expo Go compatible with SDK 58 on the phone. Keep phone and computer on the same Wi-Fi. On iPhone, scan the terminal QR code with Camera; on Android, scan from Expo Go.
-3. Open Home → **Notifications**. Expect **Stay connected** and “Push notifications are available in the installed iOS and Android app.” The permission, retry, settings, and token controls are hidden in this mode. No permission prompt or test notification should appear.
-4. For a browser preview instead, run:
+3. Open Home → **Notifications** → **Send local test notification**. Allow the OS permission prompt if shown. Expo Go still shows the installed-app message for remote push; remote opt-in and token controls remain hidden.
+4. Expect “Local test scheduled” after scheduling succeeds. About five seconds later, expect **Bulldog Bound local test** and “Tap to open Notifications. This alert was scheduled on your device.” Default sound is requested; silent mode, Focus/Do Not Disturb, provisional permission, or notification/channel settings can silence or hide the banner. No push token should be requested in Expo Go. The library may show a general Expo Go support warning; that alone does not mean local scheduling failed.
+5. To verify navigation, schedule another test and switch to Home before the five seconds pass. Tap the banner or its notification-center entry: expect the Notifications screen. Repeat by scheduling and immediately putting the app in the background, then tapping the delivered alert. Keep the Expo Go project/Metro session available for the initial tests; cold-launch routing through the Expo Go host should be verified separately in a custom build.
+6. To test denial, deny the prompt or disable notifications in device settings. Press the test button: expect a blocked-permission error and no new alert. Use **Open device settings**, allow notifications, return, and press the test button again. In Expo Go, change Expo Go's notification permission; OS settings can affect other projects opened in that app.
+7. For a browser preview instead, run:
 
    ```bash
    npx expo start --web
    ```
 
-   Expect the same notification availability message. This is UI testing, not local or remote notification delivery.
+   Expect the notification availability message and no local test button. This is UI testing, not local or remote notification delivery.
 
 ### B. Test permission in an existing custom development build
 
@@ -134,12 +139,13 @@ Run commands from `frontend/`. These are instructions for the developer; the aud
 2. Open the installed Bulldog Bound app and connect to Metro (the development server). Open Home → Notifications → **Enable notifications**.
 3. Accept or deny the OS prompt. A prompt may not appear if permission was previously decided or the OS cannot ask again. Use **Open device settings**, adjust notification permission, and return to the app to check the status refresh.
 4. If registration fails after permission succeeds, expect the “Notifications are allowed” status, an error, and **Retry connection**. A token should appear under **Development push token** only if registration succeeds in development mode. Do not expect an alert from pressing Enable: it registers; it does not send.
+5. To test locally, press **Send local test notification** instead and follow steps A3–A6. It remains usable even with no token or while independent remote registration is busy/failing. You do not need to press Enable first. The local-test action does not call remote registration.
 
 If no build exists, local build commands are `npx expo run:android` (Android SDK/emulator or device required) and `npx expo run:ios` (macOS/Xcode; select an iOS simulator for a credential-free simulator build). These generate native directories and compile/install the app; they are not just Metro start commands. They were not run during this audit. Build/toolchain issues remain unverified. See [development build setup](https://docs.expo.dev/develop/development-builds/introduction/).
 
 ### C. Trigger a real remote test — only after push setup
 
-There is **no in-app test trigger today**. Without delivery credentials, this is not a ready-to-run notification test. Once the relevant platform is configured and its development build installed:
+The local test does **not** send a remote push. Without delivery credentials, the following remote test is not ready to run. Once the relevant platform is configured and its development build installed:
 
 1. Start Metro with `npx expo start --dev-client`, open the app, enable notifications, and copy the displayed development Expo Push Token.
 2. Use the [Expo push notification tool](https://expo.dev/notifications) with that token, a title/body, default sound, and data `{"url":"/notifications"}`. Alternatively, send from a trusted terminal:
@@ -171,13 +177,13 @@ This table separates library capability from what this app exposes. No runtime d
 
 | Environment | Local notification testing | Real remote push with this client |
 | --- | --- | --- |
-| Physical iPhone, custom build | Native permission/presentation code is present; local scheduling/trigger is missing. Installing a signed build is a separate requirement. | Requires correct signed build, APNs credentials, EAS project/token, and a sender. |
-| Physical Android, custom build | Permission/channel code is present; local trigger is missing. Local alerts do not need Firebase. | FCM client configuration is missing from checked config; FCM V1 sender credentials/project/token also required. |
-| iOS simulator, custom build | Suitable for future local tests without a paid Apple account; trigger is missing. Existing EAS profile is not a simulator profile. | Current Expo docs support push on suitable simulators (Xcode 14+, macOS 13+, iOS 16+); still requires push configuration. Not verified here. |
-| Android emulator, custom build | Suitable for future local tests; trigger is missing. | Supported by Expo on emulators with Google Play services, with FCM/project credentials configured. Not verified here. |
-| Expo Go, either platform | The library supports local notifications, but **this app skips all notification APIs**, and has no local trigger. UI preview only. | Use an installed development or production build. This app disables remote registration/listeners in Expo Go. |
-| Custom development build | Enables this app's existing native permission/listener paths. Does not add a local trigger or credentials automatically. | Intended development environment once credentials are configured. Token is visible while running development JS. |
-| Installed production build | Same native notification paths; no local trigger. | Requires production signing/configuration and a sender; token display is hidden. Not verified by the empty production profile. |
+| Physical iPhone, custom build | Local test button in development; no APNs required for local delivery. Installing a signed build is a separate requirement. | Requires correct signed build, APNs credentials, EAS project/token, and a sender. |
+| Physical Android, custom build | Local test button in development; uses the default channel. Local alerts do not need Firebase. | FCM client configuration is missing from checked config; FCM V1 sender credentials/project/token also required. |
+| iOS simulator, custom build | Local test in development without a paid Apple account. Existing EAS profile is not a simulator profile. | Current Expo docs support push on suitable simulators (Xcode 14+, macOS 13+, iOS 16+); still requires push configuration. Not verified here. |
+| Android emulator, custom build | Local test in development; notification permission/settings still apply. | Supported by Expo on emulators with Google Play services, with FCM/project credentials configured. Not verified here. |
+| Expo Go, either platform | Development local test, default sound request, and shared tap handling enabled. Requires compatible Expo Go and OS permission. | Remote token registration/token listener remain disabled. Use a custom build for remote push. |
+| Custom development build | Local test and existing native permission/response paths enabled. | Intended development environment once credentials are configured. Token is visible while running development JS. |
+| Installed production build | Local test hidden and scheduling action disabled by `__DEV__`. | Existing remote paths retained; requires production signing/configuration and a sender; token display is hidden. Not verified by the empty production profile. |
 | Web | Availability message only; no browser permission request or local notification implementation. | No web push/service worker implementation. |
 
 Platform capability references: [SDK 58 Notifications](https://docs.expo.dev/versions/v58.0.0/sdk/notifications/), [push device prerequisites](https://docs.expo.dev/push-notifications/push-notifications-setup/), and [iOS simulator builds](https://docs.expo.dev/build-reference/simulators/). Device/OS requirements for SDK 58 itself also apply; the push prerequisites are not a guarantee that this app runs on every older simulator OS.
@@ -245,7 +251,8 @@ Add user preferences and enforce them before sending. OS permission alone does n
 - [ ] Verify Apple signing, APNs credentials, capabilities, and registered test devices.
 - [ ] Add matching Android FCM client configuration and verify hosted FCM V1 credentials.
 - [ ] Build/install custom clients and test permission grant, denial, settings return, and registration failures.
-- [ ] If credential-free alert testing is wanted, add the development-only local test described above; it is not part of this audit's changes.
+- [x] Add a development-only local test independent of remote registration, including Expo Go and shared tap handling.
+- [ ] Verify local scheduling, sound, denial/recovery, and tap routing on iOS and Android devices; verify the button is absent in release builds.
 - [ ] Verify real foreground/background/launch delivery, sound, and every allowed/fallback tap destination on both platforms and release builds.
 - [ ] Implement token upload/removal endpoints, persistent storage, identity association, and token refresh synchronization.
 - [ ] Implement event-based backend sending, tickets/receipts, retry handling, and invalid-token removal.
