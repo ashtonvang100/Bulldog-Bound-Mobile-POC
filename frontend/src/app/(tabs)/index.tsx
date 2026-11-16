@@ -47,6 +47,10 @@ export default function Dashboard() {
             <MediaPlaceholder />
             <View style={styles.actions}>
               <ActionRow
+                title="Notifications"
+                onPress={() => router.push("/notifications")}
+              />
+              <ActionRow
                 title="Registration Form"
                 onPress={() =>
                   router.push({

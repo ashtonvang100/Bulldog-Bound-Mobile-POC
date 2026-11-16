@@ -1,6 +1,6 @@
 # Bulldog Bound dashboard prototype
 
-An Expo SDK 57 / React Native / TypeScript recreation of the Fresno State ModoLabs guest dashboard, using native components and local media. No backend, authentication, production requests, or WebView.
+An Expo SDK 58 / React Native / TypeScript recreation of the Fresno State ModoLabs guest dashboard, using native components and local media. The notification client uses Expo Push Service; a backend sender is not included.
 
 Reference: https://fresnosandbox-prod.modolabs.net/default/dashboardtesting/_/bb_guest_dash
 
@@ -13,13 +13,17 @@ npm ci
 npx expo start --go
 ```
 
-Install/open Expo Go compatible with SDK 57. Connect the phone and computer to the same Wi-Fi. On iPhone, scan the terminal QR code with Camera and open in Expo Go. On Android, scan it from Expo Go. Metro serves the application to your device.
+Install/open Expo Go compatible with SDK 58 to preview the dashboard. Push notifications require an installed development or production build; the Notifications screen explains availability in Expo Go and on web. Connect the phone and computer to the same Wi-Fi. On iPhone, scan the terminal QR code with Camera and open in Expo Go. On Android, scan it from Expo Go. Metro serves the application to your device.
 
 If LAN connectivity is blocked, use `npx expo start --go --tunnel` (Expo may prompt to install its tunnel helper).
 
 ## Organization
 
-- `src/app/index.tsx`: dashboard composition and local interaction state.
+For push credentials, development builds, a remote test, and the backend integration point, see [Push notifications](docs/push-notifications.md).
+
+- `src/app/(tabs)/index.tsx`: dashboard composition and local interaction state.
+- `src/app/notifications.tsx`: opt-in notification controls and development-only push token.
+- `src/notifications/NotificationsProvider.tsx`: permissions, registration, foreground presentation, token refresh, and tap navigation.
 - `src/app/_layout.tsx`: Expo Router stack, safe-area provider, and status bar.
 - `src/components/dashboard/`: Header, ActionRow, ProgramGrid, MediaPlaceholder, and PreviewModal.
 - `src/data/dashboard.ts`: original introduction, menu labels, grade tiles, shared colors, and preview types.
