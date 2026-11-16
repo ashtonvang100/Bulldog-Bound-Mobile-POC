@@ -141,8 +141,8 @@ export function NotificationsProvider({ children }: PropsWithChildren) {
       }
       await api.scheduleNotificationAsync({
         content: {
-          title: "Bulldog Bound local test",
-          body: "Tap to open Notifications. This alert was scheduled on your device.",
+          title: "Bulldog Bound",
+          body: "Your notification test was successful!",
           sound: "default",
           data: { url: "/notifications" },
         },

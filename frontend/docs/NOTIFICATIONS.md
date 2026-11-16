@@ -80,8 +80,14 @@ The screen's “ready to receive push notifications” text means a token was ob
 - The handler ignores custom action identifiers, deduplicates the last handled notification ID within the listener's lifetime, and clears the saved response after handling. Subscriptions are removed on cleanup.
 - `addPushTokenListener` re-registers using the changed native token. This currently updates memory only.
 - There is no `addNotificationReceivedListener` for app-specific receipt processing, notification inbox/history, custom action buttons, background task, or badge-count management. Foreground display uses `setNotificationHandler`; it does not require an inbox listener.
-- The development-only local test uses `scheduleNotificationAsync` with a non-repeating five-second interval, title **Bulldog Bound local test**, a message, default sound, and `data: { url: "/notifications" }`. Android uses the existing `default` channel. There is no repeat schedule or cancel control.
+- The development-only local test uses `scheduleNotificationAsync` with a non-repeating five-second interval, title **Bulldog Bound**, body **Your notification test was successful!**, default sound, and `data: { url: "/notifications" }`. Android uses the existing `default` channel. There is no repeat schedule or cancel control.
 - Preferences currently mean OS permission/settings only. No topic switches, backend subscription preference, or notification sign-out cleanup exists.
+
+### Notifications screen layout
+
+`/notifications` is a root-stack screen beside `(tabs)`, not a screen inside the tab navigator. The stack provides its header/top safe area. On iOS, the scroll view now uses automatic navigation insets to keep content clear of native navigation bars. Its viewport uses `flex: 1`, and its content can fill the viewport or scroll when it is longer. The existing safe-area wrapper protects the bottom and sides, with 24 points of content padding below the final item. There is no overlaid app tab bar on this route, so no guessed tab-bar height is added and the tab design is unchanged.
+
+The scroll view also adjusts keyboard insets on iOS, dismisses the keyboard on drag, and lets buttons handle taps while a keyboard is visible. This screen has no text inputs; no global keyboard settings were changed. Check a small phone and enlarged text: the title should appear below the header, and the final settings/error text should be reachable by scrolling. Native visual verification on different devices remains outstanding. See [safe areas](https://docs.expo.dev/develop/user-interface/safe-areas/) and [React Native ScrollView insets](https://reactnative.dev/docs/scrollview#contentinsetadjustmentbehavior).
 
 ## 3. What I Can Test Right Now – Features that don't require external credentials
 
@@ -117,7 +123,7 @@ Run commands from `frontend/`. These are instructions for the developer; no buil
 
 2. Install/open Expo Go compatible with SDK 58 on the phone. Keep phone and computer on the same Wi-Fi. On iPhone, scan the terminal QR code with Camera; on Android, scan from Expo Go.
 3. Open Home → **Notifications** → **Send local test notification**. Allow the OS permission prompt if shown. Expo Go still shows the installed-app message for remote push; remote opt-in and token controls remain hidden.
-4. Expect “Local test scheduled” after scheduling succeeds. About five seconds later, expect **Bulldog Bound local test** and “Tap to open Notifications. This alert was scheduled on your device.” Default sound is requested; silent mode, Focus/Do Not Disturb, provisional permission, or notification/channel settings can silence or hide the banner. No push token should be requested in Expo Go. The library may show a general Expo Go support warning; that alone does not mean local scheduling failed.
+4. Expect “Local test scheduled” after scheduling succeeds. About five seconds later, expect title **Bulldog Bound** and body **Your notification test was successful!** Default sound is requested; silent mode, Focus/Do Not Disturb, provisional permission, or notification/channel settings can silence or hide the banner. In Expo Go, the OS may also identify the host as Expo Go; this test does not change the installed app's name/icon. No push token should be requested in Expo Go. The library may show a general Expo Go support warning; that alone does not mean local scheduling failed.
 5. To verify navigation, schedule another test and switch to Home before the five seconds pass. Tap the banner or its notification-center entry: expect the Notifications screen. Repeat by scheduling and immediately putting the app in the background, then tapping the delivered alert. Keep the Expo Go project/Metro session available for the initial tests; cold-launch routing through the Expo Go host should be verified separately in a custom build.
 6. To test denial, deny the prompt or disable notifications in device settings. Press the test button: expect a blocked-permission error and no new alert. Use **Open device settings**, allow notifications, return, and press the test button again. In Expo Go, change Expo Go's notification permission; OS settings can affect other projects opened in that app.
 7. For a browser preview instead, run:
@@ -253,6 +259,7 @@ Add user preferences and enforce them before sending. OS permission alone does n
 - [ ] Build/install custom clients and test permission grant, denial, settings return, and registration failures.
 - [x] Add a development-only local test independent of remote registration, including Expo Go and shared tap handling.
 - [ ] Verify local scheduling, sound, denial/recovery, and tap routing on iOS and Android devices; verify the button is absent in release builds.
+- [ ] Visually verify Notifications header/safe-area spacing and scrolling to the last control on small phones and with enlarged text.
 - [ ] Verify real foreground/background/launch delivery, sound, and every allowed/fallback tap destination on both platforms and release builds.
 - [ ] Implement token upload/removal endpoints, persistent storage, identity association, and token refresh synchronization.
 - [ ] Implement event-based backend sending, tickets/receipts, retry handling, and invalid-token removal.

@@ -28,7 +28,15 @@ export default function NotificationsScreen() {
   const [settingsError, setSettingsError] = useState<string | null>(null);
   return (
     <SafeAreaView style={styles.screen} edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* The stack header owns the top inset; let iOS account for navigation bars. */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
         <Text accessibilityRole="header" style={styles.title}>
           Stay connected
         </Text>
@@ -152,7 +160,9 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  scroll: { flex: 1 },
   content: {
+    flexGrow: 1,
     padding: 24,
     gap: 20,
     width: "100%",
